@@ -142,9 +142,13 @@ class Data
 			UNION ALL
 			(SELECT 'host_id', `id` FROM `request_hosts` WHERE `host` = :host LIMIT 1)
 			UNION ALL
-			(SELECT 'uri_id', `id` FROM `request_uris` WHERE `uri` = :uri LIMIT 1);");
+			(SELECT 'uri_id', `id` FROM `request_uris` WHERE `uri` = :uri AND `hash_value` = :hash_value LIMIT 1);");
 		
-		$sth->execute(array('method' => $_SERVER['REQUEST_METHOD'], 'host' => $_SERVER['HTTP_HOST'], 'uri' => $_SERVER['REQUEST_URI']));
+		$sth->execute(array(
+				'method' => $_SERVER['REQUEST_METHOD'], 
+				'host' => $_SERVER['HTTP_HOST'], 
+				'uri' => $_SERVER['REQUEST_URI'],
+				'hash_value' => sha1($_SERVER['REQUEST_URI']) ));
 		
 		$request	= $sth->fetchAll(PDO::FETCH_KEY_PAIR);
 
@@ -169,8 +173,9 @@ class Data
 		if(!isset($request['uri_id']))
 		{
 			$this->db
-				->prepare("INSERT INTO `request_uris` SET `uri` = :uri;")
-				->execute(array('uri' => $_SERVER['REQUEST_URI']));
+				->prepare("INSERT INTO `request_uris` SET `uri` = :uri, `hash_value` = :hash_value;")
+				->execute(array('uri' => $_SERVER['REQUEST_URI'],
+						'hash_value' => sha1($_SERVER['REQUEST_URI']) ));
 		
 			$request['uri_id']		= $this->db->lastInsertId();
 		}
